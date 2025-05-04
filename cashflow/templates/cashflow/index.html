@@ -124,23 +124,25 @@
 
         const tbody = document.querySelector('#recordsTable tbody');
         tbody.innerHTML = '';
+
         data.forEach(item => {
-            tbody.innerHTML += `
-                <tr>
-                    <td>${item.created_at.split('T')[0]}</td>
-                    <td>${item.status_name}</td>
-                    <td>${item.type_name}</td>
-                    <td>${item.category_name}</td>
-                    <td>${item.subcategory_name}</td>
-                    <td>${item.amount}</td>
-                    <td>${item.comment}</td>
-                    <td>
-                        <a href="{% url 'record' %}?id=${item.id}" class="btn btn-sm btn-warning">✏️</a>
-                        <button onclick="deleteRecord(${item.id})" class="btn btn-sm btn-danger">🗑️</button>
-                    </td>
-                </tr>
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.created_at.split('T')[0]}</td>
+                <td>${item.status_name}</td>
+                <td>${item.type_name}</td>
+                <td>${item.category_name}</td>
+                <td>${item.subcategory_name}</td>
+                <td>${item.amount}</td>
+                <td>${item.comment}</td>
+                <td>
+                    <a href="{% url 'record' %}?id=${item.id}" class="btn btn-sm btn-warning">✏️</a>
+                    <button onclick="deleteRecord(${item.id})" class="btn btn-sm btn-danger">🗑️</button>
+                </td>
             `;
+            tbody.appendChild(tr);
         });
+
     }
 
     async function deleteRecord(id) {
@@ -167,6 +169,35 @@
     document.getElementById('applyFilterBtn').addEventListener('click', loadRecords);
 
     fetchAndRenderFilters().then(loadRecords);
+
+    const typeSelect = document.getElementById("filter_type");
+    const categorySelect = document.getElementById("filter_category");
+    const subcategorySelect = document.getElementById("filter_subcategory");
+
+    typeSelect.addEventListener("change", () => {
+        const typeId = typeSelect.value;
+        categorySelect.innerHTML = '<option value="">Загрузка...</option>';
+        subcategorySelect.innerHTML = '<option value="">Выберите подкатегорию</option>';
+        if (typeId) {
+            loadOptions(`/cashflow/api/categories/?type=${typeId}`, categorySelect, "Выберите категорию");
+        }
+    });
+
+    categorySelect.addEventListener("change", () => {
+        const categoryId = categorySelect.value;
+        subcategorySelect.innerHTML = '<option value="">Загрузка...</option>';
+        if (categoryId) {
+            loadOptions(`/cashflow/api/subcategories/?category=${categoryId}`, subcategorySelect, "Выберите подкатегорию");
+        }
+    });
+
+    async function loadOptions(url, selectElement, defaultText) {
+        const resp = await fetch(url);
+        const items = await resp.json();
+        selectElement.innerHTML = `<option value="">${defaultText}</option>` +
+            items.map(i => `<option value="${i.id}">${i.name}</option>`).join('');
+    }
+
     </script>
 </body>
 </html>
