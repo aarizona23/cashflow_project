@@ -1,0 +1,147 @@
+<!-- templates/cashflow/record.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Создание/редактирование записи</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    {% csrf_token %}
+    <meta name="csrf-token" content="{{ csrf_token }}">
+</head>
+<body class="p-4">
+    <h2>Создание записи</h2>
+    <form id="recordForm" class="row g-3">
+        <div class="col-md-3">
+            <label>Дата:</label>
+            <input type="date" name="created_at" class="form-control" required>
+        </div>
+        <div class="col-md-3">
+            <label>Статус:</label>
+            <select name="status" id="status" class="form-control" required></select>
+        </div>
+        <div class="col-md-3">
+            <label>Тип:</label>
+            <select name="type" id="type" class="form-control" required></select>
+        </div>
+        <div class="col-md-3">
+            <label>Категория:</label>
+            <select name="category" id="category" class="form-control" required></select>
+        </div>
+        <div class="col-md-3">
+            <label>Подкатегория:</label>
+            <select name="subcategory" id="subcategory" class="form-control" required></select>
+        </div>
+        <div class="col-md-3">
+            <label>Сумма:</label>
+            <input type="number" name="amount" class="form-control" required>
+        </div>
+        <div class="col-md-6">
+            <label>Комментарий:</label>
+            <input type="text" name="comment" class="form-control">
+        </div>
+        <div class="col-md-12">
+            <button type="submit" class="btn btn-success">Сохранить</button>
+        </div>
+    </form>
+    <!-- Кнопка перехода на главную -->
+    <div class="row mb-3">
+      <div class="col text-center">
+        <a href="{% url 'index' %}" class="btn btn-primary">Перейти на главную</a>
+      </div>
+    </div>
+
+    <script>
+  const recordId = new URLSearchParams(window.location.search).get("id");
+
+  const form = document.getElementById("record-form");
+
+  // 1. Если редактирование — загружаем данные в форму
+  if (recordId) {
+    fetch(`/cashflow/api/cashflow/${recordId}/`)
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("amount").value = data.amount;
+        document.getElementById("comment").value = data.comment;
+        document.getElementById("date").value = data.created_at.split("T")[0]; // ISO date
+        document.getElementById("status").value = data.status;
+        document.getElementById("type").value = data.type;
+
+        // Загружаем категории по типу
+        fetch(`/cashflow/api/categories/?type=${data.type}`)
+          .then(res => res.json())
+          .then(categories => {
+            const categorySelect = document.getElementById("category");
+            categorySelect.innerHTML = '';
+            categories.forEach(cat => {
+              categorySelect.innerHTML += `<option value="${cat.id}" ${cat.id === data.category ? 'selected' : ''}>${cat.name}</option>`;
+            });
+
+            // Загружаем подкатегории по категории
+            fetch(`/cashflow/api/subcategories/?category=${data.category}`)
+              .then(res => res.json())
+              .then(subs => {
+                const subSelect = document.getElementById("subcategory");
+                subSelect.innerHTML = '';
+                subs.forEach(sub => {
+                  subSelect.innerHTML += `<option value="${sub.id}" ${sub.id === data.subcategory ? 'selected' : ''}>${sub.name}</option>`;
+                });
+              });
+          });
+      });
+  }
+
+  // 2. Обработка отправки формы: POST или PUT
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    const formData = {
+      amount: document.getElementById("amount").value,
+      comment: document.getElementById("comment").value,
+      created_at: document.getElementById("created_at").value || null,
+      status: document.getElementById("status").value,
+      type: document.getElementById("type").value,
+      category: document.getElementById("category").value,
+      subcategory: document.getElementById("subcategory").value,
+    };
+
+    const url = recordId ? `/cashflow/api/cashflow/${recordId}/` : '/cashflow/api/cashflow/';
+    const method = recordId ? 'PUT' : 'POST';
+
+    fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie("csrftoken"),
+      },
+      body: JSON.stringify(formData),
+    })
+      .then(response => {
+        if (response.ok) {
+          alert("Успешно!");
+          window.location.href = "/index/";
+        } else {
+          return response.json().then(err => {
+            alert("Ошибка: " + JSON.stringify(err));
+          });
+        }
+      });
+  });
+
+  // CSRF helper
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === name + "=") {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+</script>
+
+</body>
+</html>
