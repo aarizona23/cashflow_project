@@ -9,9 +9,6 @@ class StatusModel(models.Model):
 class TypeModel(models.Model):
     name = models.CharField(max_length=255, unique=True)
 
-    def __str__(self):
-        return self.name
-
 class CategoryModel(models.Model):
     name = models.CharField(max_length=255)
     type = models.ForeignKey(TypeModel, on_delete=models.CASCADE)

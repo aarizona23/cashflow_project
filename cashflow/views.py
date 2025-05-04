@@ -9,12 +9,15 @@ import django_filters
 from django.shortcuts import render
 
 def record(request):
+    """Renders the record page."""
     return render(request, 'cashflow/record.html')
 
 def index(request):
+    """Renders the index page."""
     return render(request, 'cashflow/index.html')
 
 def admin_view(request):
+    """Renders the admin page with entities."""
     entities = {
         'statuses': 'Статусы',
         'types': 'Типы',
@@ -24,6 +27,11 @@ def admin_view(request):
     return render(request, 'cashflow/admin.html', {'entities': entities})
 
 class CashFlowFilter(FilterSet):
+    """
+    FilterSet for filtering CashFlow records.
+    Allows filtering by created_at date range, status, type, category, and subcategory.
+    """
+
     created_at = DateFromToRangeFilter()
     status = django_filters.NumberFilter(field_name='status__id')
     type = django_filters.NumberFilter(field_name='type__id')
@@ -35,6 +43,11 @@ class CashFlowFilter(FilterSet):
         fields = ['created_at', 'status', 'type', 'category', 'subcategory']
 
 class CashFlowViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing CashFlow records.
+    Provides CRUD operations and filtering capabilities.
+    """
+
     queryset = CashFlowRecordModel.objects.select_related(
         'status', 'type', 'category', 'subcategory'
     ).all()
@@ -45,14 +58,30 @@ class CashFlowViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
 
 class StatusViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing Status records.
+    Provides CRUD operations for status entities.
+    """
+
     queryset = StatusModel.objects.all()
     serializer_class = StatusSerializer
 
 class TypeViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing Type records.
+    Provides CRUD operations for type entities.
+    """
+
     queryset = TypeModel.objects.all()
     serializer_class = TypeSerializer
 
 class CategoryViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing Category records.
+    Provides CRUD operations for category entities.
+    Allows filtering by type.
+    """
+
     queryset = CategoryModel.objects.select_related('type').all()
     serializer_class = CategorySerializer
 
@@ -64,6 +93,12 @@ class CategoryViewSet(viewsets.ModelViewSet):
         return queryset
 
 class SubCategoryViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing SubCategory records.
+    Provides CRUD operations for subcategory entities.
+    Allows filtering by category.
+    """
+    
     queryset = SubCategoryModel.objects.select_related('category').all()
     serializer_class = SubCategorySerializer
 
